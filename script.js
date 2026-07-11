@@ -197,7 +197,7 @@ function bunga() {
 
 }
 
-setInterval(bunga, 600);
+setInterval(bunga, 1500);
 
 
 // ==============================
