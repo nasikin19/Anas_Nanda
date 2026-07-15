@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Form Undanganku</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    .stat-box{
+display:flex;
+gap:10px;
+margin-top:15px;
+flex-wrap:wrap;
+}
+
+.stat-card{
+flex:1;
+min-width:150px;
+background:#111827;
+padding:15px;
+border-radius:12px;
+text-align:center;
+border:1px solid #374151;
+}
+
+.stat-card h3{
+font-size:30px;
+margin-bottom:5px;
+color:#10b981;
+}
+
+.action-btn{
+padding:7px 12px;
+margin:2px;
+font-size:13px;
+border-radius:8px;
+}
+
+.delete{
+background:#ef4444;
+}
+
+.edit{
+background:#3b82f6;
+}
+
+.qr{
+margin-top:20px;
+text-align:center;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,sans-serif}
+body{
+background:#111827;
+color:#fff;
+padding:30px;
+}
+.container{
+max-width:1100px;
+margin:auto;
+}
+h1{
+font-size:34px;
+margin-bottom:25px;
+}
+.card{
+background:#1f2937;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+label{
+display:block;
+margin-bottom:6px;
+font-weight:600;
+}
+input{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+margin-bottom:15px;
+font-size:15px;
+}
+textarea{
+width:100%;
+height:120px;
+padding:12px;
+border:none;
+border-radius:10px;
+margin-bottom:15px;
+}
+button{
+padding:12px 20px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+margin-right:10px;
+margin-bottom:10px;
+background:#10b981;
+color:#fff;
+font-weight:600;
+}
+button:hover{
+opacity:.9;
+}
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+th,td{
+padding:12px;
+border-bottom:1px solid #333;
+text-align:left;
+}
+tr:hover{
+background:#273449;
+}
+.status{
+padding:4px 10px;
+border-radius:20px;
+font-size:13px;
+}
+.done{
+background:#16a34a;
+}
+.wait{
+background:#f59e0b;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📨 Form Undanganku</h1>
+
+<div class="card">
+
+<label>Nama Tamu</label>
+<input id="nama">
+
+<label>Nomor WhatsApp</label>
+<input id="nomor" placeholder="08123456789">
+
+<label>Link Undangan</label>
+<input id="link" readonly>
+
+<label>Pesan WhatsApp</label>
+<textarea id="pesan" readonly></textarea>
+
+<button onclick="generate()">Generate</button>
+<button onclick="copyLink()">Copy Link</button>
+<button onclick="copyPesan()">Copy Pesan</button>
+<button onclick="kirimWA()">Kirim WA</button>
+<button onclick="simpan()">Simpan</button>
+<input type="file" accept=".csv" onchange="importCSV(this.files[0])">
+
+<button onclick="exportCSV()">Export CSV</button>
+
+<button onclick="bukaLink()">Buka Undangan</button>
+
+<hr style="margin:20px 0">
+
+<div id="statistik"></div>
+<div class="stat-box">
+
+<div class="stat-card">
+<h3 id="jmlTamu">0</h3>
+<p>Total Tamu</p>
+</div>
+
+<div class="stat-card">
+<h3 id="jmlKirim">0</h3>
+<p>Terkirim</p>
+</div>
+
+<div class="stat-card">
+<h3 id="jmlBelum">0</h3>
+<p>Belum</p>
+</div>
+
+</div>
+
+<div class="qr">
+<img id="qrImg" width="180">
+</div>
+
+<br>
+
+<button onclick="hapusSemua()" style="background:#dc2626">
+Hapus Semua Data
+</button>
+</div>
+
+<div class="card">
+
+<h2>Daftar Tamu</h2>
+
+<input id="cari" placeholder="Cari nama..." onkeyup="filterData()">
+
+<table>
+
+<thead>
+<tr>
+<th>Nama</th>
+<th>Nomor</th>
+<th>Status</th>
+<th>Aksi</th>
+</tr>
+</thead>
+
+<tbody id="tbody">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+    const BASE_URL = "https://nasikin19.github.io/Anas_Nanda/";
+
+let data = JSON.parse(localStorage.getItem("tamu") || "[]");
+
+function formatNomor(no){
+    no=no.replace(/\D/g,'');
+    if(no.startsWith("0")) no="62"+no.substring(1);
+    if(!no.startsWith("62")) no="62"+no;
+    return no;
+}
+
+function generate(){
+
+    let nama=document.getElementById("nama").value.trim();
+
+    if(nama==""){
+        alert("Masukkan nama tamu");
+        return;
+    }
+
+    let link=BASE_URL+"?to="+encodeURIComponent(nama);
+
+    document.getElementById("link").value=link;
+
+    document.getElementById("pesan").value=
+`Assalamu'alaikum Wr. Wb.
+
+Tanpa mengurangi rasa hormat, kami mengundang
+
+${nama}
+
+untuk menghadiri acara pernikahan kami.
+
+Silakan buka undangan melalui tautan berikut:
+
+${link}
+
+Merupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.
+
+Terima kasih.`;
+}
+
+function copyLink(){
+
+navigator.clipboard.writeText(document.getElementById("link").value);
+
+alert("Link berhasil disalin");
+
+}
+
+function copyPesan(){
+
+navigator.clipboard.writeText(document.getElementById("pesan").value);
+
+alert("Pesan berhasil disalin");
+
+}
+
+function kirimWA(){
+
+let nomor=formatNomor(document.getElementById("nomor").value);
+
+let pesan=encodeURIComponent(document.getElementById("pesan").value);
+
+window.open("https://wa.me/"+nomor+"?text="+pesan,"_blank");
+
+}
+
+function simpan(){
+
+let nama=document.getElementById("nama").value.trim();
+
+let nomor=document.getElementById("nomor").value.trim();
+
+if(nama=="") return;
+
+data.push({
+nama,
+nomor,
+status:"Belum"
+});
+
+localStorage.setItem("tamu",JSON.stringify(data));
+
+render();
+
+}
+
+function render(){
+
+let tbody=document.getElementById("tbody");
+
+tbody.innerHTML="";
+
+data.forEach((x,i)=>{
+
+tbody.innerHTML+=`
+<tr>
+<td>${x.nama}</td>
+<td>${x.nomor}</td>
+<td>
+<span class="status ${x.status=="Terkirim"?"done":"wait"}">${x.status}</span>
+</td>
+<td>
+
+<button onclick="buat(${i})">Buat</button>
+
+<button onclick="wa(${i})">WA</button>
+
+<button onclick="hapus(${i})">Hapus</button>
+
+</td>
+</tr>`;
+
+});
+
+}
+
+function buat(i){
+
+document.getElementById("nama").value=data[i].nama;
+
+document.getElementById("nomor").value=data[i].nomor;
+
+generate();
+
+}
+
+function wa(i){
+
+document.getElementById("nama").value=data[i].nama;
+
+document.getElementById("nomor").value=data[i].nomor;
+
+generate();
+
+kirimWA();
+
+data[i].status="Terkirim";
+
+localStorage.setItem("tamu",JSON.stringify(data));
+
+render();
+
+}
+
+function hapus(i){
+
+if(confirm("Hapus tamu ini?")){
+
+data.splice(i,1);
+
+localStorage.setItem("tamu",JSON.stringify(data));
+
+render();
+
+}
+
+}
+
+function filterData(){
+
+let key=document.getElementById("cari").value.toLowerCase();
+
+document.querySelectorAll("#tbody tr").forEach(tr=>{
+
+tr.style.display=tr.innerText.toLowerCase().includes(key)?"":"none";
+
+});
+
+}
+
+render();
+// =============================
+// IMPORT CSV
+// =============================
+
+function importCSV(file){
+
+const reader=new FileReader();
+
+reader.onload=function(e){
+
+const rows=e.target.result.split(/\r?\n/);
+
+rows.forEach((row,index)=>{
+
+if(index==0)return;
+
+const col=row.split(",");
+
+if(col.length>=2){
+
+data.push({
+
+nama:col[0].trim(),
+
+nomor:col[1].trim(),
+
+status:"Belum"
+
+});
+
+}
+
+});
+
+localStorage.setItem("tamu",JSON.stringify(data));
+
+render();
+
+};
+
+reader.readAsText(file);
+
+}
+
+// =============================
+// EXPORT CSV
+// =============================
+
+function exportCSV(){
+
+let csv="Nama,Nomor,Status\n";
+
+data.forEach(x=>{
+
+csv+=`${x.nama},${x.nomor},${x.status}\n`;
+
+});
+
+const blob=new Blob([csv],{type:"text/csv"});
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="Daftar_Tamu.csv";
+
+a.click();
+
+}
+
+// =============================
+// STATISTIK
+// =============================
+
+function statistik(){
+
+let total=data.length;
+
+let terkirim=data.filter(x=>x.status=="Terkirim").length;
+
+let belum=total-terkirim;
+
+return{
+
+total,
+
+terkirim,
+
+belum
+
+};
+
+}
+
+function updateStat(){
+
+let s=statistik();
+
+let box=document.getElementById("statistik");
+
+if(box){
+
+box.innerHTML=`
+<b>Total :</b> ${s.total}
+&nbsp;&nbsp;|&nbsp;&nbsp;
+<b>Terkirim :</b> ${s.terkirim}
+&nbsp;&nbsp;|&nbsp;&nbsp;
+<b>Belum :</b> ${s.belum}
+`;
+
+}
+
+}
+
+const renderOld=render;
+
+render=function(){
+
+renderOld();
+
+updateStat();
+
+}
+
+// =============================
+// BUKA LINK
+// =============================
+
+function bukaLink(){
+
+let link=document.getElementById("link").value;
+
+if(link!=""){
+
+window.open(link,"_blank");
+
+}
+
+}function updateQR(){
+
+let link=document.getElementById("link").value;
+
+if(link=="") return;
+
+document.getElementById("qrImg").src=
+"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="
++encodeURIComponent(link);
+
+}
+
+const generateOld=generate;
+
+generate=function(){
+
+generateOld();
+
+updateQR();
+
+}
+
+function hapusSemua(){
+
+if(confirm("Yakin ingin menghapus seluruh daftar tamu?")){
+
+localStorage.removeItem("tamu");
+
+data=[];
+
+render();
+
+}
+
+}
+
+const renderBackup=render;
+
+render=function(){
+
+renderBackup();
+
+document.getElementById("jmlTamu").innerHTML=data.length;
+
+document.getElementById("jmlKirim").innerHTML=
+data.filter(x=>x.status=="Terkirim").length;
+
+document.getElementById("jmlBelum").innerHTML=
+data.filter(x=>x.status!="Terkirim").length;
+
+}
+</script>
+
+</body>
+</html>
